@@ -176,26 +176,308 @@
     #btn-clear-text-history:hover { background: #5a6268; }
     .text-history-list { max-height: 310px; overflow-y: auto; border: 1px solid #e1e5e9; border-radius: 6px; background: #fff; }
     .text-history-empty { padding: 18px 12px; text-align: center; color: #868e96; font-size: 12px; }
-    .text-history-item { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px 11px; border-bottom: 1px solid #edf0f2; cursor: pointer; transition: background .15s ease, border-color .15s ease; }
+    .text-history-item {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: center;
+      padding: 10px 11px;
+      border-bottom: 1px solid #edf0f2;
+      cursor: pointer;
+      transition: background .15s ease, border-color .15s ease;
+    }
     .text-history-item:last-child { border-bottom: 0; }
     .text-history-item:hover { background: #f8fbff; }
-    .text-history-item.active-text-history { background: #e7f1ff; border-left: 4px solid #007bff; padding-left: 7px; }
+    .text-history-item.active-text-history {
+      background: #e7f1ff;
+      border-left: 4px solid #007bff;
+      padding-left: 7px;
+    }
     .text-history-main { min-width: 0; }
-    .text-history-text { font-size: 12px; font-weight: 700; color: #343a40; white-space: pre-wrap; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.3; }
-    .text-history-meta { margin-top: 5px; font-size: 10px; color: #6c757d; line-height: 1.35; }
-    .text-history-item-actions { display: flex; flex-direction: column; gap: 5px; width: 82px; }
-    .text-history-item-actions button { width: 100%; margin: 0; padding: 6px 7px; font-size: 10px; }
+    .text-history-text {
+      font-size: 12px;
+      font-weight: 700;
+      color: #343a40;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      line-height: 1.3;
+    }
+    .text-history-meta {
+      margin-top: 5px;
+      font-size: 10px;
+      color: #6c757d;
+      line-height: 1.35;
+    }
+    .text-history-item-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      width: 82px;
+    }
+    .text-history-item-actions button {
+      width: 100%;
+      margin: 0;
+      padding: 6px 7px;
+      font-size: 10px;
+    }
     .btn-use-text-history { background: #007bff; }
     .btn-delete-text-history { background: #dc3545; }
-    @media (max-width: 600px) { .text-history-header { align-items: flex-start; flex-direction: column; } #btn-clear-text-history { width: 100%; } .text-history-actions { flex-direction: column; } .text-history-item { grid-template-columns: 1fr; } .text-history-item-actions { width: 100%; flex-direction: row; } }
+    @media (max-width: 600px) {
+      .text-history-header { align-items: flex-start; flex-direction: column; }
+      #btn-clear-text-history { width: 100%; }
+      .text-history-actions { flex-direction: column; }
+      .text-history-item { grid-template-columns: 1fr; }
+      .text-history-item-actions { width: 100%; flex-direction: row; }
+    }
+
+    /* ESTILOS DE IMPRESIÓN DE ETIQUETAS */
     #print-area { display: none; }
     #print-barcode-content, #print-text-label { display: none; }
+
     @media print {
-      body { background: #ffffff !important; margin: 0 !important; padding: 0 !important; }
+      body {
+        background: #ffffff !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
       .app-shell, .modal-overlay { display: none !important; }
-      #print-area { display: flex !important; flex-direction: column; justify-content: center; align-items: center; background: white; margin: 0 auto; box-sizing: border-box; overflow: hidden; }
-      body.print-mode-barcode #print-barcode-content { display: flex !important; width: 100%; height: 100%; flex-direction: column; justify-content: space-evenly; align-items: center; overflow: hidden; }
-      body.print-mode-text #print-text-label { display: flex !important; width: 100%; height: 100%; box-sizing: border-box; padding: 1.5mm 3mm !important; align-items: center; justify-content: center; overflow: hidden; }
-      #print-barcode-content svg { display: block; margin: 0 auto; max-width: 100% !important; max-height: 100% !important; flex-shrink: 1; object-fit: contain; overflow: visible; }
-      #print-text-content { width: 100%; max-height: 100%; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-word; line-height: 1.06; color: #000; }
+      
+      #print-area {
+        display: flex !important;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        background: white;
+        margin: 0 auto;
+        box-sizing: border-box;
+        overflow: hidden;
+      }
+      body.print-mode-barcode #print-barcode-content {
+        display: flex !important;
+        width: 100%;
+        height: 100%;
+        flex-direction: column;
+        justify-content: space-evenly;
+        align-items: center;
+        overflow: hidden;
+      }
+      body.print-mode-text #print-text-label {
+        display: flex !important;
+        width: 100%;
+        height: 100%;
+        box-sizing: border-box;
+        padding: 1.5mm 3mm !important;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+      }
+      #print-barcode-content svg {
+        display: block;
+        margin: 0 auto;
+        max-width: 100% !important;
+        max-height: 100% !important;
+        flex-shrink: 1;
+        object-fit: contain;
+        overflow: visible;
+      }
+      #print-text-content {
+        width: 100%;
+        max-height: 100%;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+        line-height: 1.06;
+        color: #000;
+      }
     }
+
+/* =========================================================
+   TEMA OSCURO — INTERFAZ PDT
+   La etiqueta/preview permanece blanca para representar papel.
+   ========================================================= */
+:root {
+  color-scheme: dark;
+  --dark-bg: #070b12;
+  --dark-surface: #101722;
+  --dark-surface-2: #151f2e;
+  --dark-surface-3: #1b2738;
+  --dark-border: #2a3a50;
+  --dark-text: #f2f6fb;
+  --dark-muted: #9aa9bc;
+  --dark-primary: #4da3ff;
+  --dark-primary-strong: #2388f2;
+}
+
+body {
+  background: radial-gradient(circle at top, #111b2b 0%, var(--dark-bg) 48%, #05080d 100%);
+  color: var(--dark-text);
+}
+
+.main-nav,
+.card,
+.modal-content {
+  background: rgba(16, 23, 34, 0.96);
+  color: var(--dark-text);
+  border: 1px solid rgba(115, 145, 180, 0.18);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.38);
+}
+
+.main-nav {
+  backdrop-filter: blur(12px);
+}
+
+.main-nav-btn {
+  background: #182231;
+  color: #bac7d7;
+  border: 1px solid #26364a;
+}
+.main-nav-btn:hover {
+  background: #202d3e;
+  color: #ffffff;
+}
+.main-nav-btn.active {
+  background: linear-gradient(135deg, #177ee8, #3b9dff);
+  color: #ffffff;
+  border-color: #4aa6ff;
+  box-shadow: 0 5px 18px rgba(35, 136, 242, .32);
+}
+
+h2, h3 { color: #f7f9fc; }
+label { color: #c4cfdd; }
+.field-help,
+#view-text .text-tab-subtitle,
+.text-print-note,
+.text-history-meta,
+#multi-select-count { color: var(--dark-muted); }
+
+.printer-profile {
+  background: #102435;
+  border-color: #24516d;
+  color: #8fd4ff;
+}
+.printer-profile strong { color: #d1efff; }
+
+input,
+select,
+textarea {
+  background: #0c131d;
+  color: #edf4fc;
+  border-color: #304056;
+}
+input::placeholder,
+textarea::placeholder { color: #6f8094; }
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--dark-primary);
+  box-shadow: 0 0 0 3px rgba(77, 163, 255, .15);
+}
+input.valid {
+  border-color: #35c776;
+  background: #0d2118;
+  color: #eafff2;
+}
+input.invalid {
+  border-color: #ff5d69;
+  background: #2a1117;
+  color: #ffe8ea;
+  box-shadow: 0 0 0 2px rgba(255, 93, 105, .12);
+}
+.field-error { color: #ff737d; }
+
+button:disabled {
+  background: #29323f !important;
+  color: #758397 !important;
+  opacity: .8;
+}
+
+/* Las áreas de etiqueta siguen blancas para imitar el papel térmico. */
+.barcode-display,
+.text-label-preview {
+  background: #ffffff;
+  border-color: #8290a0;
+}
+.text-label-preview-shell {
+  background: #0b111a;
+  border: 1px solid #253247;
+}
+
+.tabs-header { border-bottom-color: #314158; }
+.tabs-header::-webkit-scrollbar-track { background: #0b1119; }
+.tabs-header::-webkit-scrollbar-thumb { background: #40516a; }
+.tabs-header::-webkit-scrollbar-thumb:hover { background: #586b86; }
+.tab-item {
+  background: #192333;
+  border-color: #32445d;
+  color: #aebccd;
+}
+.tab-item:hover { background: #223047; color: #fff; }
+.tab-item.active {
+  background: #197fe5;
+  border-color: #3a9eff;
+  color: #fff;
+}
+.tab-item .close-tab { background: rgba(255,255,255,.09); }
+
+.history-select-toolbar {
+  background: #0c131d;
+  border-color: #28374b;
+}
+.history-select-toolbar label { color: #c1ccda; }
+.history-select-toolbar input[type="checkbox"],
+.record-select-checkbox { accent-color: #45a2ff; }
+
+.history-list,
+.text-history-list {
+  background: #0b111a;
+  border-color: #29384d;
+}
+.history-item {
+  border-bottom-color: #202d3e;
+  color: var(--dark-text);
+}
+.history-item:hover { background: #111d2c; }
+.history-item.multi-checked { background: #10243a; }
+.history-item.selected {
+  background: #122b46;
+  border-left-color: #49a5ff;
+}
+.history-title { color: #63b4ff; }
+.history-codes { color: #b7c4d3; }
+
+.text-history-item {
+  border-bottom-color: #202d3e;
+}
+.text-history-item:hover { background: #111d2c; }
+.text-history-item.active-text-history {
+  background: #122b46;
+  border-left-color: #49a5ff;
+}
+.text-history-text { color: #eef4fb; }
+.text-history-count {
+  background: #243246;
+  color: #cdd8e5;
+}
+.text-history-empty { color: #8291a5; }
+
+.margin-badge {
+  background: #112d49;
+  color: #75c1ff;
+  border: 1px solid #244f77;
+}
+
+.modal-overlay { background: rgba(0, 0, 0, .76); }
+.modal-content p { color: #a9b6c7; }
+
+/* Mantener la salida impresa estrictamente blanca aunque la UI sea oscura. */
+@media print {
+  :root { color-scheme: light; }
+  body { background: #ffffff !important; color: #000000 !important; }
+  #print-area,
+  #print-barcode-content,
+  #print-text-label { background: #ffffff !important; color: #000000 !important; }
+}
