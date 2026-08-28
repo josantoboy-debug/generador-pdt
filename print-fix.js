@@ -1,6 +1,6 @@
 /* Restauración de impresión física Zebra PDT
-   Mantiene el tamaño seleccionado y, para 2.5 x 1.0 in, respeta exactamente
-   63.5 x 25.4 mm. Cada CODE128 ocupa como máximo la mitad de la etiqueta. */
+   Tamaño físico exacto de la etiqueta seleccionada.
+   Para código de barras y texto: margen lateral fijo de 3 mm a izquierda y derecha. */
 (function () {
   window.printStyle = function (w, h) {
     let s = document.getElementById('dynamic-print-style');
@@ -50,7 +50,10 @@
           width: 100% !important;
           height: 100% !important;
           box-sizing: border-box !important;
-          padding: 0.025in 0.055in !important;
+          padding-top: 0.6mm !important;
+          padding-bottom: 0.6mm !important;
+          padding-left: 3mm !important;
+          padding-right: 3mm !important;
           margin: 0 !important;
           flex-direction: column !important;
           justify-content: space-evenly !important;
@@ -64,8 +67,8 @@
           display: block !important;
           width: auto !important;
           height: auto !important;
-          max-width: calc(${w}in - 0.11in) !important;
-          max-height: calc((${h}in - 0.05in) / 2) !important;
+          max-width: calc(${w}in - 6mm) !important;
+          max-height: calc((${h}in - 1.2mm) / 2) !important;
           margin: 0 auto !important;
           padding: 0 !important;
           flex: 0 1 auto !important;
