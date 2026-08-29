@@ -1,6 +1,6 @@
 const VERSION='1.0.0';
 const CACHE=`generador-pdt-${VERSION}`;
-const SHELL=['./','./index.html','./styles.css','./dark.css','./app.js','./print-fix.js','./voice-welcome.js','./config.js','./production-core.js','./cloud-session.js','./app-integration.js','./manifest.json','./icon.svg'];
+const SHELL=['./','./index.html','./styles.css','./dark.css','./app.js','./print-fix.js','./voice-welcome.js','./config.js','./production-core.js','./cloud-session.js','./app-integration.js','./admin-panel.js','./manifest.json','./icon.svg'];
 
 self.addEventListener('install',event=>{
   event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(SHELL)));
