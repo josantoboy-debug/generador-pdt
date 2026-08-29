@@ -9,6 +9,23 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <link rel="stylesheet" href="styles.css?v=20260827-1">
   <link rel="stylesheet" href="dark.css?v=20260827-2">
+  <style>
+    .app-footer{margin-top:22px;padding:15px 8px 4px;border-top:1px solid var(--border,#dfe3e8);color:var(--muted,#6c757d);text-align:center;font-size:11px;line-height:1.55}
+    .app-footer .footer-authors{color:var(--text,#343a40);font-weight:600}
+    .app-footer .footer-authors strong{font-weight:700}
+    .app-footer .footer-meta{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:2px}
+    .credits-link{width:auto;margin:0;padding:2px 5px;border:0;background:transparent!important;color:var(--primary2,#007bff)!important;font:inherit;font-weight:700;text-transform:none;text-decoration:underline;text-underline-offset:2px;box-shadow:none!important}
+    .credits-link:hover{opacity:.82;background:transparent!important}
+    .credits-overlay{position:fixed;inset:0;z-index:2000;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(0,0,0,.62);backdrop-filter:blur(4px)}
+    .credits-overlay.open{display:flex}
+    .credits-card{width:min(390px,94vw);padding:22px;border-radius:14px;background:var(--surface,#fff);color:var(--text,#222);border:1px solid var(--border,#dfe3e8);box-shadow:0 24px 70px rgba(0,0,0,.34);text-align:center}
+    .credits-card h3{margin:0 0 14px;font-size:16px}
+    .credits-people{display:grid;gap:7px;margin:10px 0 16px;font-size:14px;font-weight:700}
+    .credits-card p{margin:0;color:var(--muted,#6c757d);font-size:11px}
+    .credits-close{width:auto;min-width:110px;margin-top:18px;padding:8px 14px}
+    @media(max-width:600px){.app-footer{font-size:10.5px;padding-left:2px;padding-right:2px}.app-footer .footer-meta{gap:5px}.credits-card{padding:20px 16px}}
+    @media print{.app-footer,.credits-overlay{display:none!important}}
+  </style>
 </head>
 <body>
 
@@ -22,15 +39,15 @@
       <div class="layout-wrapper">
     <div class="card generator-panel">
       <h2>GENERADOR CODIGO DE BARRAS</h2>
-      <div class="printer-profile"><strong>PERFIL DE IMPRESIÓN:</strong> ULTRA PRECISIÓN · 2.5" × 1.0" · 63.5 × 25.4 mm · CODE128</div>
+      <div class="printer-profile"><strong>PERFIL DE IMPRESIÓN:</strong> ULTRA PRECISIÓN · 2.5&quot; × 1.0&quot; · 63.5 × 25.4 mm · CODE128</div>
       
       <div class="config-row">
         <div class="input-group">
           <label>Tamaño de Etiqueta:</label>
           <select id="select-size">
-            <option value="2.5x1.0" selected>2.5" x 1.0" (Zebra / DRS)</option>
-            <option value="2.5x2.0">2.5" x 2.0" (Estándar)</option>
-            <option value="4.0x6.0">4.0" x 6.0" (Grande)</option>
+            <option value="2.5x1.0" selected>2.5&quot; x 1.0&quot; (Zebra / DRS)</option>
+            <option value="2.5x2.0">2.5&quot; x 2.0&quot; (Estándar)</option>
+            <option value="4.0x6.0">4.0&quot; x 6.0&quot; (Grande)</option>
           </select>
         </div>
       </div>
@@ -59,8 +76,6 @@
         <button id="btn-download" disabled>EXPORTAR CODIGO DE BARRA</button>
         <button id="btn-print-main" disabled>IMPRIMIR CODIGO DE BARRA</button>
       </div>
-
-
     </div>
 
     <div class="card history-panel">
@@ -108,9 +123,9 @@
         <div class="input-group">
           <label>Tamaño de Etiqueta:</label>
           <select id="text-select-size">
-            <option value="2.5x1.0" selected>2.5" x 1.0" (Zebra / DRS)</option>
-            <option value="2.5x2.0">2.5" x 2.0" (Estándar)</option>
-            <option value="4.0x6.0">4.0" x 6.0" (Grande)</option>
+            <option value="2.5x1.0" selected>2.5&quot; x 1.0&quot; (Zebra / DRS)</option>
+            <option value="2.5x2.0">2.5&quot; x 2.0&quot; (Estándar)</option>
+            <option value="4.0x6.0">4.0&quot; x 6.0&quot; (Grande)</option>
           </select>
         </div>
 
@@ -182,6 +197,20 @@ EQUIPO VERIFICADO"></textarea>
       </div>
       </div>
     </section>
+
+    <footer class="app-footer" aria-label="Créditos de desarrollo">
+      <div class="footer-authors">Desarrollado por <strong>Josue Parfait</strong> &amp; <strong>Marcos Rodríguez</strong></div>
+      <div class="footer-meta"><span>© 2026 — Todos los derechos reservados.</span><span aria-hidden="true">·</span><button type="button" class="credits-link" id="creditsBtn">Créditos</button></div>
+    </footer>
+  </div>
+
+  <div id="creditsModal" class="credits-overlay" role="dialog" aria-modal="true" aria-labelledby="creditsTitle" hidden>
+    <div class="credits-card">
+      <h3 id="creditsTitle">Co-creadores y desarrolladores</h3>
+      <div class="credits-people"><span>Josue Parfait</span><span>Marcos Rodríguez</span></div>
+      <p>Proyecto desarrollado conjuntamente — 2026</p>
+      <button type="button" class="btn-secondary credits-close" id="creditsClose">Cerrar</button>
+    </div>
   </div>
 
   <!-- VENTANA FLOTANTE (MODAL) DE EXPORTACIÓN -->
@@ -210,5 +239,19 @@ EQUIPO VERIFICADO"></textarea>
 
   <script src="app.js"></script>
   <script src="print-fix.js?v=20260828-3"></script>
+  <script>
+    (()=>{
+      const btn=document.getElementById('creditsBtn');
+      const modal=document.getElementById('creditsModal');
+      const close=document.getElementById('creditsClose');
+      if(!btn||!modal||!close)return;
+      const openModal=()=>{modal.hidden=false;modal.classList.add('open');close.focus();};
+      const closeModal=()=>{modal.classList.remove('open');modal.hidden=true;btn.focus();};
+      btn.addEventListener('click',openModal);
+      close.addEventListener('click',closeModal);
+      modal.addEventListener('click',e=>{if(e.target===modal)closeModal();});
+      document.addEventListener('keydown',e=>{if(e.key==='Escape'&&modal.classList.contains('open'))closeModal();});
+    })();
+  </script>
 </body>
 </html>
