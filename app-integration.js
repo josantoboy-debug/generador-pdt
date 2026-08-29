@@ -7,6 +7,16 @@
   const host = () => core()?.ValidationService.normalizeHost($('text-sn')?.value || '');
   const ua = () => digitsUA($('text-ua')?.value || '');
   const size = selector => $(selector)?.value || '2.5x1.0';
+  let adminLoaded = false;
+
+  function ensureAdminPanel() {
+    if (adminLoaded || core()?.AuthService.operator?.role !== 'admin') return;
+    adminLoaded = true;
+    const script = document.createElement('script');
+    script.src = `admin-panel.js?v=${encodeURIComponent(core().config.appVersion)}`;
+    script.onerror = error => { adminLoaded = false; core()?.ErrorService.capture('admin-panel-load', error); };
+    document.head.appendChild(script);
+  }
 
   function toast(message, tone = 'ok') {
     let el = $('prodToast');
@@ -71,7 +81,10 @@
     document.addEventListener('operator:login', event => {
       const name = event.detail?.name;
       if (name) toast(`Bienvenida, ${name}.`);
+      ensureAdminPanel();
     });
+    document.addEventListener('production:session-changed', ensureAdminPanel);
+    ensureAdminPanel();
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bind, { once:true });
