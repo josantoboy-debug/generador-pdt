@@ -1,0 +1,51 @@
+name: Production CI
+
+on:
+  push:
+    branches: [production/supabase-v1]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: JavaScript syntax
+        run: |
+          set -euo pipefail
+          for f in *.js tests/*.cjs; do node --check "$f"; done
+      - name: Security and configuration checks
+        run: |
+          set -euo pipefail
+          grep -F 'sb_publishable_' config.js
+          ! grep -R -E 'service_role|SUPABASE_SERVICE_ROLE_KEY|sb_secret_' --include='*.js' --include='*.html' --include='*.json' .
+          grep -F "appVersion: '1.0.0'" config.js
+      - name: PWA structure
+        run: |
+          node -e "const fs=require('fs');const m=JSON.parse(fs.readFileSync('manifest.json'));if(m.display!=='standalone'||!m.icons?.length)process.exit(1)"
+          test -f service-worker.js
+          test -f icon.svg
+          grep -F "const VERSION='1.0.0'" service-worker.js
+      - name: Protect physical printing implementation
+        run: |
+          git fetch origin backup/pre-production-supabase-20260829:refs/remotes/origin/backup/pre-production-supabase-20260829
+          git diff --exit-code origin/backup/pre-production-supabase-20260829 -- app.js print-fix.js styles.css dark.css
+          grep -F '2.5x1.0' index.html
+          grep -F '63.5 × 25.4 mm' index.html
+          grep -F '3 mm a la izquierda y 3 mm a la derecha' index.html
+      - name: Install browser test dependency
+        run: npm install --no-save puppeteer-core@24.16.0
+      - name: Start application
+        run: |
+          python3 -m http.server 4173 --bind 127.0.0.1 > /tmp/pdt-http.log 2>&1 &
+          for i in {1..30}; do curl -fsS http://127.0.0.1:4173/ >/dev/null && exit 0; sleep 1; done
+          cat /tmp/pdt-http.log; exit 1
+      - name: Chromium desktop tablet mobile smoke tests
+        run: node tests/production-smoke.cjs
