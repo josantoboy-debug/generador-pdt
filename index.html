@@ -3,7 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0f172a">
   <title>GENERADOR CODIGO DE BARRAS - Fuentes Estandarizadas PDT</title>
+  <link rel="manifest" href="manifest.json?v=1.0.0">
+  <link rel="icon" href="icon.svg?v=1.0.0" type="image/svg+xml">
   <!-- JsBarcode y SheetJS (XLSX) CDN -->
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -200,7 +203,7 @@ EQUIPO VERIFICADO"></textarea>
 
     <footer class="app-footer" aria-label="Créditos de desarrollo">
       <div class="footer-authors">Desarrollado por <strong>Josue Parfait</strong> &amp; <strong>Marcos Rodríguez</strong></div>
-      <div class="footer-meta"><span>© 2026 — Todos los derechos reservados.</span><span aria-hidden="true">·</span><button type="button" class="credits-link" id="creditsBtn">Créditos</button></div>
+      <div class="footer-meta"><span>© 2026 — Todos los derechos reservados.</span><span aria-hidden="true">·</span><span>v1.0.0</span><span aria-hidden="true">·</span><button type="button" class="credits-link" id="creditsBtn">Créditos</button></div>
     </footer>
   </div>
 
@@ -208,7 +211,7 @@ EQUIPO VERIFICADO"></textarea>
     <div class="credits-card">
       <h3 id="creditsTitle">Co-creadores y desarrolladores</h3>
       <div class="credits-people"><span>Josue Parfait</span><span>Marcos Rodríguez</span></div>
-      <p>Proyecto desarrollado conjuntamente — 2026</p>
+      <p>Proyecto desarrollado conjuntamente — 2026 · Versión 1.0.0</p>
       <button type="button" class="btn-secondary credits-close" id="creditsClose">Cerrar</button>
     </div>
   </div>
@@ -237,9 +240,14 @@ EQUIPO VERIFICADO"></textarea>
     </div>
   </div>
 
-  <script src="app.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.4"></script>
+  <script src="config.js?v=1.0.0"></script>
+  <script src="production-core.js?v=1.0.0"></script>
+  <script src="cloud-session.js?v=1.0.0"></script>
+  <script src="app.js?v=1.0.0"></script>
   <script src="print-fix.js?v=20260828-3"></script>
-  <script src="voice-welcome.js?v=welcome-20260829"></script>
+  <script src="app-integration.js?v=1.0.0"></script>
+  <script src="voice-welcome.js?v=1.0.0"></script>
   <script>
     (()=>{
       const btn=document.getElementById('creditsBtn');
