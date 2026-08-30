@@ -1,0 +1,101 @@
+name: Verify high-priority security fixes
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/security-audit-fixes.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  verify-and-publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Escape imported history values before HTML rendering
+        shell: python
+        run: |
+          from pathlib import Path
+          p = Path('app.js')
+          s = p.read_text(encoding='utf-8')
+          helper = "function escapeHtml(value){return String(value??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\\\"/g,'&quot;').replace(/'/g,'&#039;')}"
+          anchor = "function recordKey(x){return `${x.sn}|${digitsUA(x.ua)}`}"
+          if helper not in s:
+              if anchor not in s:
+                  raise SystemExit('No se encontró el punto de inserción de escapeHtml')
+              s = s.replace(anchor, anchor + '\n' + helper, 1)
+          old = '<b>SN:</b> ${x.sn}<br><b>UA:</b> ${x.ua}'
+          new = '<b>SN:</b> ${escapeHtml(x.sn)}<br><b>UA:</b> ${escapeHtml(x.ua)}'
+          if old in s:
+              s = s.replace(old, new, 1)
+          elif new not in s:
+              raise SystemExit('No se encontró el render del historial esperado')
+          p.write_text(s, encoding='utf-8')
+
+      - name: Syntax check
+        run: |
+          node --check app.js
+          grep -F 'escapeHtml(x.sn)' app.js
+          grep -F 'escapeHtml(x.ua)' app.js
+
+      - name: Install browser test dependency
+        run: npm install --no-save puppeteer-core@24.16.0
+
+      - name: Start local application
+        run: |
+          python3 -m http.server 4173 --bind 127.0.0.1 > /tmp/pdt-security-http.log 2>&1 &
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:4173/ >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/pdt-security-http.log
+          exit 1
+
+      - name: Chromium stored-XSS regression test
+        shell: bash
+        run: |
+          cat > /tmp/pdt-xss-test.cjs <<'NODE'
+          const puppeteer = require(process.cwd() + '/node_modules/puppeteer-core');
+          const assert = require('assert');
+          (async () => {
+            const browser = await puppeteer.launch({headless:true, executablePath:process.env.CHROME_BIN || '/usr/bin/google-chrome', args:['--no-sandbox','--disable-setuid-sandbox']});
+            const page = await browser.newPage();
+            const errors=[];
+            page.on('pageerror',e=>errors.push(String(e)));
+            await page.goto('http://127.0.0.1:4173/',{waitUntil:'domcontentloaded',timeout:15000});
+            await page.evaluate(() => {
+              localStorage.setItem('zebra_pestanas_datos', JSON.stringify([{id:'tab-1',nombre:'REGISTRO 1',datos:[{sn:'<img src=x onerror="window.__xss=1">',ua:'000-00000-00000-000',fecha:'x',hora:'x'}]}]));
+              localStorage.setItem('zebra_tab_activa_id','tab-1');
+              window.__xss=0;
+            });
+            await page.reload({waitUntil:'domcontentloaded'});
+            await page.waitForSelector('#history-list',{timeout:5000});
+            await new Promise(r=>setTimeout(r,200));
+            const state=await page.evaluate(()=>({xss:window.__xss||0,imgs:document.querySelectorAll('#history-list img').length,text:document.querySelector('#history-list')?.textContent||''}));
+            assert.strictEqual(state.xss,0,'Injected onerror must never execute');
+            assert.strictEqual(state.imgs,0,'Imported markup must not create HTML elements');
+            assert.match(state.text,/<img src=x onerror=/,'Payload should be rendered only as text');
+            assert.strictEqual(errors.length,0,errors.join(' | '));
+            console.log('PDT_XSS_REGRESSION_OK',JSON.stringify(state));
+            await browser.close();
+          })().catch(e=>{console.error(e);process.exit(1)});
+          NODE
+          node /tmp/pdt-xss-test.cjs
+
+      - name: Commit only after security regression passes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app.js
+          if git diff --cached --quiet; then
+            echo "Security fix already present"
+            exit 0
+          fi
+          git commit -m "Escape imported history values to prevent stored XSS"
+          git push
