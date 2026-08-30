@@ -1,3 +1,4 @@
+document.write('<script src="secure-bootstrap-patch.js?v=20260829-2"><\/script>');
 document.write('<script src="cloud-operator-session.js?v=20260829-1"><\/script>');
 
 (() => {
