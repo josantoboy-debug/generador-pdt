@@ -1,3 +1,5 @@
+document.write('<script src="cloud-operator-session.js?v=20260829-1"><\/script>');
+
 (() => {
   'use strict';
 
@@ -46,7 +48,7 @@
   function speakWelcome(name) {
     if (!supported) return false;
     refreshVoices();
-    const utterance = new SpeechSynthesisUtterance(`Bienvenida ${name}`);
+    const utterance = new SpeechSynthesisUtterance(`Bienvenido, ${name}`);
     const voice = pickVoice();
     utterance.lang = voice?.lang || 'es-PA';
     if (voice) utterance.voice = voice;
@@ -63,6 +65,7 @@
   }
 
   function injectStyles() {
+    if ($('#pdtWelcomeTtsStyles')) return;
     const style = document.createElement('style');
     style.id = 'pdtWelcomeTtsStyles';
     style.textContent = `
@@ -118,6 +121,32 @@
     setTimeout(() => { input?.focus(); if (saved) input?.select(); }, 0);
   }
 
+  function showAuthLoadError() {
+    if ($('#pdtWelcomeOverlay')) return;
+    const shell = $('.app-shell');
+    if (shell) shell.inert = true;
+    const overlay = document.createElement('div');
+    overlay.id = 'pdtWelcomeOverlay';
+    overlay.className = 'pdt-welcome-overlay';
+    overlay.innerHTML = `
+      <section class="pdt-welcome-card" role="alert">
+        <h2>No se pudo iniciar el acceso</h2>
+        <p>El módulo de operadores no cargó correctamente. Recarga la aplicación para recuperar el acceso seguro.</p>
+        <button id="pdtReloadAuth" type="button">RECARGAR</button>
+      </section>`;
+    document.body.appendChild(overlay);
+    $('#pdtReloadAuth')?.addEventListener('click', () => location.reload());
+  }
+
+  function greetAuthenticatedOperator(operator) {
+    const name = normalizeName(operator?.name);
+    if (!name) return;
+    document.documentElement.dataset.personName = name;
+    try { localStorage.setItem(STORAGE_KEY, name); } catch {}
+    speakWelcome(name);
+    document.dispatchEvent(new CustomEvent('person:welcome', {detail:{name, operatorId: operator.id, ttsSupported:supported}}));
+  }
+
   function boot() {
     injectStyles();
     refreshVoices();
@@ -125,7 +154,19 @@
       if (typeof synth.addEventListener === 'function') synth.addEventListener('voiceschanged', refreshVoices);
       else if ('onvoiceschanged' in synth) synth.onvoiceschanged = refreshVoices;
     }
-    openGate();
+
+    if (!window.__PDT_CLOUD_AUTH_ENABLED__) {
+      showAuthLoadError();
+      return;
+    }
+
+    const current = window.OperatorSession?.getCurrentOperator?.();
+    if (current) {
+      greetAuthenticatedOperator(current);
+      return;
+    }
+
+    document.addEventListener('operator:login', event => greetAuthenticatedOperator(event.detail), {once:true});
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, {once:true});
