@@ -24,6 +24,10 @@
     return String(value ?? '').trim().replace(/\s+/g, ' ').slice(0, 60);
   }
 
+  function normalizeBootstrapCode(value) {
+    return String(value ?? '').trim().toUpperCase();
+  }
+
   function escapeHtml(value) {
     return String(value ?? '')
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -87,7 +91,11 @@
       NAME_EXISTS: 'Ya existe un operador con ese nombre.',
       INVALID_INPUT: 'Revisa los datos ingresados.',
       FORBIDDEN: 'Se requiere autorización de administrador.',
-      INVALID_SESSION: 'La sesión ya no es válida.'
+      INVALID_SESSION: 'La sesión ya no es válida.',
+      INVALID_BOOTSTRAP_CODE: 'Código de activación incorrecto.',
+      BOOTSTRAP_CODE_REQUIRED: 'Ingresa el código de activación inicial.',
+      BOOTSTRAP_UNAVAILABLE: 'La activación inicial ya no está disponible.',
+      ALREADY_BOOTSTRAPPED: 'El sistema ya tiene un administrador configurado.'
     })[code] || 'No se pudo completar la operación.';
   }
 
@@ -165,6 +173,10 @@
           <label>Nombre del operador<input id="pdtAuthCreateName" maxlength="60" autocomplete="off"></label>
           <label>Crear PIN<input id="pdtAuthCreatePin" type="password" inputmode="numeric" maxlength="8" autocomplete="new-password"></label>
           <label>Confirmar PIN<input id="pdtAuthCreatePin2" type="password" inputmode="numeric" maxlength="8" autocomplete="new-password"></label>
+          <div id="pdtAuthBootstrapFields" class="pdt-auth-hidden">
+            <label>Código de activación inicial<input id="pdtAuthBootstrapCode" type="text" maxlength="32" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Código de activación"></label>
+            <p style="margin:4px 0 8px;font-size:10px;color:var(--muted,#6c757d)">Solo se solicita una vez al crear el primer administrador.</p>
+          </div>
           <div id="pdtAuthAdminFields" class="pdt-auth-hidden">
             <p style="margin:12px 0 4px;font-size:10px;color:var(--muted,#6c757d)">Autoriza la creación con una cuenta administradora.</p>
             <label>Administrador<select id="pdtAuthAdmin"></select></label>
@@ -214,6 +226,7 @@
     const adminSelect = $('#pdtAuthAdmin');
     if (adminSelect) adminSelect.innerHTML = admins.map(item => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.name)}</option>`).join('');
     $('#pdtAuthAdminFields')?.classList.toggle('pdt-auth-hidden', bootstrapped !== true);
+    $('#pdtAuthBootstrapFields')?.classList.toggle('pdt-auth-hidden', bootstrapped !== false);
 
     if (bootstrapped === false && !source.length) showCreate(true);
   }
@@ -337,7 +350,13 @@
     let adminToken = null;
     try {
       if (bootstrapped === false) {
-        const created = await rpc('core_bootstrap_admin_service', {p_name: name, p_pin: pin});
+        const bootstrapCode = normalizeBootstrapCode($('#pdtAuthBootstrapCode')?.value);
+        if (!bootstrapCode) throw new Error('Ingresa el código de activación inicial.');
+        const created = await rpc('core_bootstrap_admin_service_v2', {
+          p_name: name,
+          p_pin: pin,
+          p_bootstrap_code: bootstrapCode
+        });
         if (!created?.ok) throw new Error(messageFor(created?.code));
         const login = await loginRemote(created.operator.id, pin, APP_NAME);
         await finishRemoteLogin(login, pin);
@@ -405,13 +424,24 @@
     location.reload();
   }
 
+  function publishReady() {
+    window.__PDT_CLOUD_AUTH_READY__ = true;
+    document.dispatchEvent(new CustomEvent('pdt:cloud-auth-ready', {
+      detail: {online: onlineAvailable, bootstrapped}
+    }));
+  }
+
   async function boot() {
     window.__PDT_CLOUD_AUTH_ENABLED__ = true;
     injectStyles();
     setAppLocked(true);
-    if (await restoreSession()) return;
+    if (await restoreSession()) {
+      publishReady();
+      return;
+    }
     createOverlay();
     await loadOperators();
+    publishReady();
     setTimeout(() => ($('#pdtAuthOperator')?.value ? $('#pdtAuthPin') : $('#pdtAuthCreateName'))?.focus(), 0);
   }
 
