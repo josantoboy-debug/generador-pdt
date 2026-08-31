@@ -74,3 +74,5 @@ jobs:
           grep -F "speakCriticalWarning('ua')" voice-welcome.js
           grep -F "speakCriticalWarning('serial')" voice-welcome.js
           grep -F 'data-pdt-tts-setting="criticalWarnings"' voice-welcome.js
+          grep -F 'data-tts-policy-version="20260831-critical1"' index.html
+          grep -F 'voice-welcome.js?v=20260831-critical1' index.html
