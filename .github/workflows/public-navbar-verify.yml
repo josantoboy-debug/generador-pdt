@@ -13,8 +13,10 @@ permissions:
 jobs:
   verify-public:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
+      - uses: actions/checkout@v4
+
       - name: Verify deployed pages without cache
         shell: bash
         run: |
@@ -62,5 +64,126 @@ jobs:
           echo "admin-reset-pin: HTTP ${pin_code}"
           test "$pin_code" = "200"
           grep -Ei 'PIN|administr' /tmp/admin-pin.html >/dev/null
-
           echo 'PUBLIC_NAVBAR_VERIFICATION_OK'
+
+      - name: Prepare read-only offline session test
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --depth=1 https://github.com/josantoboy-debug/match-equipos.git /tmp/match-equipos
+          npm install --no-save --no-package-lock puppeteer-core@24.16.0
+          python3 -m http.server 4177 --bind 127.0.0.1 > /tmp/generator-offline-http.log 2>&1 &
+          (cd /tmp/match-equipos && python3 -m http.server 4178 --bind 127.0.0.1 > /tmp/match-offline-http.log 2>&1 &)
+          for url in http://127.0.0.1:4177/ http://127.0.0.1:4178/; do
+            for i in {1..30}; do
+              if curl -fsS "$url" >/dev/null; then break; fi
+              sleep 1
+            done
+            curl -fsS "$url" >/dev/null
+          done
+
+      - name: Restored session and offline mode smoke
+        shell: bash
+        run: |
+          cat > /tmp/offline-session-smoke.cjs <<'NODE'
+          const assert=require('assert');
+          const puppeteer=require(process.cwd()+'/node_modules/puppeteer-core');
+
+          const operator={id:'00000000-0000-4000-8000-000000000077',name:'Operador Offline Prueba',role:'operator',active:true,version:1};
+          const corsHeaders={
+            'access-control-allow-origin':'*',
+            'access-control-allow-headers':'apikey,content-type',
+            'access-control-allow-methods':'POST,OPTIONS'
+          };
+
+          async function configurePage(browser, seed){
+            const page=await browser.newPage();
+            const errors=[];
+            page.on('pageerror',e=>errors.push(String(e)));
+            await page.evaluateOnNewDocument(({local,session})=>{
+              for(const [key,value] of Object.entries(local)) localStorage.setItem(key,JSON.stringify(value));
+              for(const [key,value] of Object.entries(session)) sessionStorage.setItem(key,typeof value==='string'?value:JSON.stringify(value));
+            },seed);
+            await page.setRequestInterception(true);
+            page.on('request',request=>{
+              const url=request.url();
+              if(/^https:\/\/(?:cdn\.jsdelivr\.net|cdn\.sheetjs\.com)/.test(url)){
+                request.respond({status:200,contentType:'application/javascript',body:'window.XLSX=window.XLSX||{};window.JsBarcode=window.JsBarcode||function(){};'});
+              }else if(url.startsWith('https://yvlayxmhcngdqribcmkh.supabase.co/')){
+                request.respond({status:503,contentType:'application/json',headers:corsHeaders,body:'{"message":"offline-test"}'});
+              }else request.continue();
+            });
+            return {page,errors};
+          }
+
+          (async()=>{
+            const browser=await puppeteer.launch({headless:true,executablePath:process.env.CHROME_BIN||'/usr/bin/google-chrome',args:['--no-sandbox','--disable-setuid-sandbox']});
+
+            {
+              const seed={
+                local:{'generadorPDT.cloudOperatorCache.v1':{version:1,operators:[operator]}},
+                session:{'generadorPDT.cloudOperatorSession.v1':{token:'fake-restored-token',operator,offline:false,savedAt:'2026-08-31T00:00:00Z'}}
+              };
+              const {page,errors}=await configurePage(browser,seed);
+              await page.goto('http://127.0.0.1:4177/?offline=restore',{waitUntil:'domcontentloaded',timeout:15000});
+              await page.waitForFunction(()=>window.__PDT_CLOUD_AUTH_READY__===true&&window.OperatorSession?.getCurrentOperator?.()?.id,{timeout:7000});
+              const state=await page.evaluate(()=>{
+                const rect=document.querySelector('.app-suite-nav')?.getBoundingClientRect();
+                return {
+                  operator:window.OperatorSession.getCurrentOperator(),
+                  offline:window.OperatorSession.getSession()?.offline===true,
+                  overlay:!!document.querySelector('#pdtAuthOverlay'),
+                  shellInert:document.querySelector('.app-shell')?.inert===true,
+                  chip:!!document.querySelector('#pdtOperatorChip'),
+                  navFits:!!rect&&rect.left>=-1&&rect.right<=innerWidth+1
+                };
+              });
+              assert.strictEqual(state.operator.id,operator.id);
+              assert.strictEqual(state.offline,true);
+              assert.strictEqual(state.overlay,false);
+              assert.strictEqual(state.shellInert,false);
+              assert.strictEqual(state.chip,true);
+              assert.strictEqual(state.navFits,true);
+              await Promise.race([page.evaluate(()=>new Promise(r=>setTimeout(r,100))),new Promise((_,rej)=>setTimeout(()=>rej(new Error('Generador event loop blocked')),2000))]);
+              assert.deepStrictEqual(errors,[]);
+              await page.close();
+            }
+
+            {
+              const localOperator={...operator,cloud:true};
+              const seed={
+                local:{'matchEquipos.operatorAccess.v1':{version:1,operators:[localOperator]}},
+                session:{
+                  'matchEquipos.activeOperator.v1':operator.id,
+                  'matchEquipos.cloudOperatorSession.v1':{token:'fake-restored-token',operator,offline:false,savedAt:'2026-08-31T00:00:00Z'}
+                }
+              };
+              const {page,errors}=await configurePage(browser,seed);
+              await page.goto('http://127.0.0.1:4178/?offline=restore',{waitUntil:'domcontentloaded',timeout:15000});
+              await page.waitForFunction(()=>window.__MATCH_CLOUD_AUTH_READY__===true&&window.OperatorSession?.getCurrentOperator?.()?.id,{timeout:7000});
+              await page.waitForFunction(()=>window.CloudOperatorAuth?.getSession?.()?.offline===true,{timeout:7000});
+              const state=await page.evaluate(()=>{
+                const rect=document.querySelector('.app-suite-nav')?.getBoundingClientRect();
+                return {
+                  operator:window.OperatorSession.getCurrentOperator(),
+                  offline:window.CloudOperatorAuth.getSession()?.offline===true,
+                  lockHidden:document.querySelector('#operatorLock')?.hasAttribute('hidden')===true,
+                  mainInert:document.querySelector('main.app')?.inert===true,
+                  navFits:!!rect&&rect.left>=-1&&rect.right<=innerWidth+1
+                };
+              });
+              assert.strictEqual(state.operator.id,operator.id);
+              assert.strictEqual(state.offline,true);
+              assert.strictEqual(state.lockHidden,true);
+              assert.strictEqual(state.mainInert,false);
+              assert.strictEqual(state.navFits,true);
+              await Promise.race([page.evaluate(()=>new Promise(r=>setTimeout(r,100))),new Promise((_,rej)=>setTimeout(()=>rej(new Error('Match event loop blocked')),2000))]);
+              assert.deepStrictEqual(errors,[]);
+              await page.close();
+            }
+
+            await browser.close();
+            console.log('RESTORED_OFFLINE_SESSION_OK');
+          })().catch(e=>{console.error(e);process.exit(1);});
+          NODE
+          node /tmp/offline-session-smoke.cjs
