@@ -1,8 +1,9 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-nav-version="20260831-appnav1">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="app-navigation-version" content="20260831-appnav1">
   <title>GENERADOR CODIGO DE BARRAS - Fuentes Estandarizadas PDT</title>
   <!-- JsBarcode y SheetJS (XLSX) CDN -->
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
@@ -26,10 +27,38 @@
     @media(max-width:600px){.app-footer{font-size:10.5px;padding-left:2px;padding-right:2px}.app-footer .footer-meta{gap:5px}.credits-card{padding:20px 16px}}
     @media print{.app-footer,.credits-overlay{display:none!important}}
   </style>
+  <style id="app-suite-navigation-styles">
+    .app-suite-bar{display:flex;align-items:center;gap:14px;margin:0 0 12px;padding:10px 12px;border:1px solid var(--border,#dfe3e8);border-radius:11px;background:var(--surface,#fff);color:var(--text,#222);box-shadow:0 4px 15px rgba(0,0,0,.08)}
+    .app-suite-title{display:flex;align-items:center;gap:9px;min-width:0}
+    .app-suite-mark{width:34px;height:34px;flex:0 0 34px;display:grid;place-items:center;border-radius:9px;background:linear-gradient(135deg,#2f6fe4,#4dd0e1);color:#07111c;font-weight:900;font-size:14px}
+    .app-suite-title-text{min-width:0}
+    .app-suite-title strong{display:block;font-size:12px;line-height:1.2;color:var(--text,#222);white-space:nowrap}
+    .app-suite-title small{display:block;margin-top:2px;color:var(--muted,#6c757d);font-size:9px;line-height:1.2;white-space:nowrap}
+    .app-suite-nav{margin-left:auto;display:flex;align-items:center;gap:6px}
+    .app-suite-link{width:auto;min-width:132px;min-height:38px;margin:0;padding:8px 11px;display:inline-flex;align-items:center;justify-content:center;gap:7px;border:1px solid var(--border,#dfe3e8);border-radius:9px;background:var(--surface2,#f1f3f5);color:var(--text,#343a40);font-size:11px;font-weight:800;line-height:1;text-decoration:none;text-transform:none;box-shadow:none;transition:background .18s,border-color .18s,transform .18s}
+    .app-suite-link:hover{background:rgba(47,111,228,.12);border-color:#4f8cff;transform:translateY(-1px)}
+    .app-suite-link.active{background:#2f6fe4;border-color:#4f8cff;color:#fff;box-shadow:0 4px 12px rgba(47,111,228,.24)}
+    .app-suite-link .app-suite-link-mark{width:22px;height:22px;display:grid;place-items:center;border-radius:6px;background:rgba(127,127,127,.14);font-size:10px;font-weight:900}
+    .app-suite-link.active .app-suite-link-mark{background:rgba(255,255,255,.18)}
+    @media(max-width:760px){.app-suite-bar{align-items:stretch;flex-direction:column;gap:8px}.app-suite-nav{margin-left:0;display:grid;grid-template-columns:1fr 1fr}.app-suite-link{min-width:0;width:100%}.app-suite-title small{white-space:normal}}
+    @media(max-width:420px){.app-suite-title small{display:none}.app-suite-link{padding:8px 7px;font-size:10px}}
+    @media print{.app-suite-bar{display:none!important}}
+  </style>
 </head>
 <body>
 
   <div class="app-shell">
+    <header class="app-suite-bar" data-nav-version="20260831-appnav1">
+      <div class="app-suite-title">
+        <div class="app-suite-mark" aria-hidden="true">P</div>
+        <div class="app-suite-title-text"><strong>HERRAMIENTAS PDT</strong><small>Navegación entre aplicaciones</small></div>
+      </div>
+      <nav class="app-suite-nav" aria-label="Cambiar de aplicación">
+        <a class="app-suite-link active" aria-current="page" href="https://josantoboy-debug.github.io/generador-pdt/"><span class="app-suite-link-mark" aria-hidden="true">G</span><span>Generador PDT</span></a>
+        <a class="app-suite-link" href="https://josantoboy-debug.github.io/match-equipos/"><span class="app-suite-link-mark" aria-hidden="true">M</span><span>Match Equipos</span></a>
+      </nav>
+    </header>
+
     <nav class="main-nav" aria-label="Secciones principales">
       <button type="button" class="main-nav-btn active" data-view="barcode">GENERAR CÓDIGO DE BARRAS</button>
       <button type="button" class="main-nav-btn" data-view="text">IMPRIMIR TEXTO</button>
