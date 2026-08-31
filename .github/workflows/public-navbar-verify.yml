@@ -1,0 +1,66 @@
+name: Public navbar verification
+
+on:
+  push:
+    branches:
+      - verify/public-navbar-20260831
+    paths:
+      - '.github/workflows/public-navbar-verify.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify-public:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Verify deployed pages without cache
+        shell: bash
+        run: |
+          set -euo pipefail
+          stamp="$(date +%s)"
+
+          verify_page() {
+            name="$1"
+            url="$2"
+            target="$3"
+            extra_marker="$4"
+            out="/tmp/${name}.html"
+            headers="/tmp/${name}.headers"
+
+            code=$(curl -sS -L --max-time 30 \
+              -H 'Cache-Control: no-cache, no-store, max-age=0' \
+              -H 'Pragma: no-cache' \
+              -D "$headers" -o "$out" -w '%{http_code}' \
+              "${url}?verify=20260831-appnav1-${stamp}")
+
+            echo "${name}: HTTP ${code}"
+            test "$code" = "200"
+            grep -F 'data-nav-version="20260831-appnav1"' "$out"
+            grep -F "$target" "$out"
+            if [ -n "$extra_marker" ]; then grep -F "$extra_marker" "$out"; fi
+          }
+
+          verify_page \
+            generador \
+            'https://josantoboy-debug.github.io/generador-pdt/' \
+            'https://josantoboy-debug.github.io/match-equipos/' \
+            'Generador PDT'
+
+          verify_page \
+            match \
+            'https://josantoboy-debug.github.io/match-equipos/' \
+            'https://josantoboy-debug.github.io/generador-pdt/' \
+            'data-build="20260831-matchlocation1"'
+
+          pin_code=$(curl -sS -L --max-time 30 \
+            -H 'Cache-Control: no-cache, no-store, max-age=0' \
+            -H 'Pragma: no-cache' \
+            -o /tmp/admin-pin.html -w '%{http_code}' \
+            "https://josantoboy-debug.github.io/match-equipos/admin-reset-pin.html?verify=${stamp}")
+          echo "admin-reset-pin: HTTP ${pin_code}"
+          test "$pin_code" = "200"
+          grep -Ei 'PIN|administr' /tmp/admin-pin.html >/dev/null
+
+          echo 'PUBLIC_NAVBAR_VERIFICATION_OK'
