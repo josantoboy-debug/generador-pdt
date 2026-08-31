@@ -1,0 +1,47 @@
+name: TTS public Pages verification
+
+on:
+  push:
+    branches:
+      - verify/tts-public-20260831
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-public-tts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify public Generador PDT TTS policy without cache
+        shell: bash
+        env:
+          PUBLIC_URL: https://josantoboy-debug.github.io/generador-pdt/
+          EXPECTED_TTS_VERSION: 20260831-critical1
+        run: |
+          set -uo pipefail
+          ok=0
+          for attempt in {1..36}; do
+            nonce="${GITHUB_SHA}-${attempt}-$(date +%s)"
+            code=$(curl -sS -L --max-time 15 -H 'Cache-Control: no-cache' -H 'Pragma: no-cache' -o /tmp/live.html -w '%{http_code}' "${PUBLIC_URL}?verify=${nonce}" || true)
+            js_code=$(curl -sS -L --max-time 15 -H 'Cache-Control: no-cache' -H 'Pragma: no-cache' -o /tmp/voice.js -w '%{http_code}' "${PUBLIC_URL}voice-welcome.js?v=${EXPECTED_TTS_VERSION}&verify=${nonce}" || true)
+            if [ "$code" = "200" ] && [ "$js_code" = "200" ] \
+              && grep -F "data-tts-policy-version=\"${EXPECTED_TTS_VERSION}\"" /tmp/live.html >/dev/null \
+              && grep -F "voice-welcome.js?v=${EXPECTED_TTS_VERSION}" /tmp/live.html >/dev/null \
+              && grep -F "POLICY_VERSION = '${EXPECTED_TTS_VERSION}'" /tmp/voice.js >/dev/null \
+              && grep -F 'welcome:false, criticalWarnings:true' /tmp/voice.js >/dev/null \
+              && grep -F "speakCriticalWarning('duplicate')" /tmp/voice.js >/dev/null \
+              && grep -F "speakCriticalWarning('ua')" /tmp/voice.js >/dev/null \
+              && grep -F "speakCriticalWarning('serial')" /tmp/voice.js >/dev/null \
+              && grep -F 'https://josantoboy-debug.github.io/match-equipos/' /tmp/live.html >/dev/null; then
+              echo "PDT_PUBLIC_TTS_OK url=${PUBLIC_URL} html_http=${code} js_http=${js_code} tts=${EXPECTED_TTS_VERSION}"
+              ok=1
+              break
+            fi
+            echo "Attempt ${attempt}: waiting for public TTS ${EXPECTED_TTS_VERSION}; html=${code} js=${js_code}"
+            sleep 5
+          done
+          test "$ok" = "1"
