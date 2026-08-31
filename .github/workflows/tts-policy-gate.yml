@@ -1,0 +1,76 @@
+name: Selective TTS policy gate
+
+on:
+  push:
+    branches:
+      - repair/tts-default-off-20260831
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  tts-policy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate JavaScript syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r -d '' file; do node --check "$file"; done < <(find . -maxdepth 1 -name '*.js' -print0)
+
+      - name: Validate selective TTS defaults
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const assert = require('assert');
+          let spoken = [];
+          global.MutationObserver = class { observe(){} disconnect(){} };
+          global.SpeechSynthesisUtterance = class { constructor(text){ this.text=text; } };
+          global.document = {
+            readyState:'loading',
+            querySelector(){ return null; },
+            querySelectorAll(){ return []; },
+            addEventListener(){},
+            head:{appendChild(){}},
+            documentElement:{dataset:{}}
+          };
+          global.localStorage = {getItem(){return null;},setItem(){}};
+          global.window = {
+            speechSynthesis:{speak:u=>spoken.push(String(u.text||'')),cancel(){},getVoices(){return[];},addEventListener(){}},
+            SpeechSynthesisUtterance:global.SpeechSynthesisUtterance
+          };
+          require('./voice-welcome.js');
+          const api = window.PDTWelcomeTTS;
+          assert(api, 'PDTWelcomeTTS no se publicó');
+          assert.deepStrictEqual(api.getPreference(), {welcome:false,criticalWarnings:true});
+          api.speakWelcome('Operador');
+          assert.strictEqual(spoken.length,0,'La bienvenida no debe hablar por defecto');
+          api.speakCriticalWarning('duplicate');
+          api.speakCriticalWarning('ua');
+          api.speakCriticalWarning('serial');
+          assert.deepStrictEqual(spoken,[
+            'Precaución. Dispositivo duplicado.',
+            'Precaución. Error en código U A.',
+            'Precaución. Error en código Serial.'
+          ]);
+          console.log('PDT_TTS_POLICY_OK', api.version, api.getPreference(), spoken);
+          NODE
+
+      - name: Validate warning hooks and policy version
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F "const POLICY_VERSION = '20260831-critical1'" voice-welcome.js
+          grep -F "criticalWarnings:true" voice-welcome.js
+          grep -F "welcome:false" voice-welcome.js
+          grep -F "speakCriticalWarning('duplicate')" voice-welcome.js
+          grep -F "speakCriticalWarning('ua')" voice-welcome.js
+          grep -F "speakCriticalWarning('serial')" voice-welcome.js
+          grep -F 'data-pdt-tts-setting="criticalWarnings"' voice-welcome.js
