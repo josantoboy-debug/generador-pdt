@@ -1,0 +1,57 @@
+/* UNITCHECK suite branding
+ * Brand version: 20260831-suitebrand1
+ * Shared naming: UNITCHECK · Match / UNITCHECK · Generador.
+ */
+.unitcheck-suite-bar{min-height:58px}
+.unitcheck-brand{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  min-width:0;
+  flex:0 1 310px;
+}
+.unitcheck-mark{
+  display:block;
+  width:42px;
+  height:42px;
+  flex:0 0 42px;
+  object-fit:contain;
+}
+.unitcheck-brand-title{
+  display:flex;
+  align-items:baseline;
+  gap:5px;
+  min-width:0;
+  line-height:1;
+  white-space:nowrap;
+  color:var(--text,#222);
+}
+.unitcheck-brand-title strong{
+  display:inline;
+  font-size:17px;
+  font-weight:900;
+  line-height:1;
+  letter-spacing:.015em;
+  color:inherit;
+}
+.unitcheck-brand-separator{
+  color:var(--muted,#6c757d);
+  font-size:15px;
+  font-weight:800;
+}
+.unitcheck-brand-module{
+  color:var(--muted,#6c757d);
+  font-size:15px;
+  font-weight:800;
+}
+@media(max-width:760px){
+  .unitcheck-brand{flex:1 1 auto}
+}
+@media(max-width:420px){
+  .unitcheck-brand{gap:8px}
+  .unitcheck-mark{width:38px;height:38px;flex-basis:38px}
+  .unitcheck-brand-title{gap:4px}
+  .unitcheck-brand-title strong{font-size:15px}
+  .unitcheck-brand-separator,.unitcheck-brand-module{font-size:13px}
+}
+@media print{.unitcheck-mark{filter:none}}
