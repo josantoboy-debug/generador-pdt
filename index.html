@@ -1,11 +1,12 @@
 <!DOCTYPE html>
-<html lang="es" data-nav-version="20260831-appnav1" data-tts-policy-version="20260831-critical1">
+<html lang="es" data-nav-version="20260831-appnav1" data-tts-policy-version="20260831-critical1" data-brand-version="20260831-suitebrand1">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="app-navigation-version" content="20260831-appnav1">
   <meta name="tts-policy-version" content="20260831-critical1">
-  <title>GENERADOR CODIGO DE BARRAS - Fuentes Estandarizadas PDT</title>
+  <meta name="brand-version" content="20260831-suitebrand1">
+  <title>UNITCHECK · Generador</title>
   <!-- JsBarcode y SheetJS (XLSX) CDN -->
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -45,18 +46,19 @@
     @media(max-width:420px){.app-suite-title small{display:none}.app-suite-link{padding:8px 7px;font-size:10px}}
     @media print{.app-suite-bar{display:none!important}}
   </style>
+  <link rel="stylesheet" href="unitcheck-brand.css?v=20260831-suitebrand1" data-unitcheck-brand="1">
 </head>
 <body>
 
   <div class="app-shell">
-    <header class="app-suite-bar" data-nav-version="20260831-appnav1">
-      <div class="app-suite-title">
-        <div class="app-suite-mark" aria-hidden="true">P</div>
-        <div class="app-suite-title-text"><strong>HERRAMIENTAS PDT</strong><small>Navegación entre aplicaciones</small></div>
+    <header class="app-suite-bar unitcheck-suite-bar" data-nav-version="20260831-appnav1" data-brand-version="20260831-suitebrand1">
+      <div class="app-suite-title unitcheck-brand" aria-label="UNITCHECK · Generador">
+        <img class="unitcheck-mark" src="assets/unitcheck-mark.svg?v=20260831-suitebrand1" alt="" width="42" height="42" decoding="async" fetchpriority="high">
+        <div class="unitcheck-brand-title"><strong>UNITCHECK</strong><span class="unitcheck-brand-separator" aria-hidden="true">·</span><span class="unitcheck-brand-module">Generador</span></div>
       </div>
       <nav class="app-suite-nav" aria-label="Cambiar de aplicación">
-        <a class="app-suite-link active" aria-current="page" href="https://josantoboy-debug.github.io/generador-pdt/"><span class="app-suite-link-mark" aria-hidden="true">G</span><span>Generador PDT</span></a>
-        <a class="app-suite-link" href="https://josantoboy-debug.github.io/match-equipos/"><span class="app-suite-link-mark" aria-hidden="true">M</span><span>Match Equipos</span></a>
+        <a class="app-suite-link active" aria-current="page" href="https://josantoboy-debug.github.io/generador-pdt/"><span class="app-suite-link-mark" aria-hidden="true">G</span><span>UNITCHECK · Generador</span></a>
+        <a class="app-suite-link" href="https://josantoboy-debug.github.io/match-equipos/"><span class="app-suite-link-mark" aria-hidden="true">M</span><span>UNITCHECK · Match</span></a>
       </nav>
     </header>
 
