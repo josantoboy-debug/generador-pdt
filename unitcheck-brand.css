@@ -53,5 +53,6 @@
   .unitcheck-brand-title{gap:4px}
   .unitcheck-brand-title strong{font-size:15px}
   .unitcheck-brand-separator,.unitcheck-brand-module{font-size:13px}
+  .app-suite-nav{grid-template-columns:minmax(0,1fr);width:100%;min-width:0}
 }
 @media print{.unitcheck-mark{filter:none}}
