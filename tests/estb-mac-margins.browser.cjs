@@ -44,6 +44,7 @@ async function runView(browser,name,width,height){
   page.on('console',m=>{if(m.type()==='error')errors.push(m.text())});
   page.on('dialog',d=>d.dismiss());
   const requests=await intercept(page);
+  await page.evaluateOnNewDocument(()=>{localStorage.removeItem('zebra_pestanas_datos');localStorage.removeItem('zebra_tab_activa_id');localStorage.removeItem('zebra_text_history_v1');sessionStorage.clear();});
   await page.goto(`http://127.0.0.1:4177/?estb=${name}`,{waitUntil:'domcontentloaded',timeout:15000});
   await page.waitForSelector('#pdtAuthOverlay',{visible:true,timeout:5000});
   await page.waitForFunction(()=>window.__PDT_CLOUD_AUTH_READY__===true,{timeout:5000});
@@ -58,7 +59,7 @@ async function runView(browser,name,width,height){
   }));
   assert.deepStrictEqual(auth,{marker:VERSION,locked:true,overlay:true,operators:1,aux:true,displayAux:true,printAux:true});
 
-  await page.evaluate(()=>{document.querySelector('#pdtAuthOverlay')?.remove();const s=document.querySelector('.app-shell');s.inert=false;s.removeAttribute('aria-hidden');localStorage.removeItem('zebra_pestanas_datos');});
+  await page.evaluate(()=>{document.querySelector('#pdtAuthOverlay')?.remove();const s=document.querySelector('.app-shell');s.inert=false;s.removeAttribute('aria-hidden');});
   assert.strictEqual(await page.$eval('#text-aux-id',el=>el.maxLength),12);
 
   await input(page,'#text-aux-id','m12345678901');
