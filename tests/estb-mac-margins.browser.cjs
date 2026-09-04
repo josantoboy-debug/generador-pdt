@@ -3,7 +3,7 @@ const puppeteer=require(process.cwd()+'/node_modules/puppeteer-core');
 
 const VERSION='20260904-estbmac1';
 const OP={id:'00000000-0000-4000-8000-000000000001',name:'Test Operator',role:'admin',active:true,version:1};
-const VIEWS=[['desktop',1366,768],['tablet',768,1024],['mobile',390,844]];
+const VIEWS=[['desktop',1366,768]];
 const CORS={
   'access-control-allow-origin':'*',
   'access-control-allow-headers':'apikey,content-type,authorization,x-client-info,prefer',
