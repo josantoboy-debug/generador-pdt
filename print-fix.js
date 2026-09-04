@@ -1,13 +1,16 @@
 /* Auditoría y corrección de impresión física Zebra PDT
    - Etiqueta 2.5 x 1.0 in = 63.5 x 25.4 mm
-   - Margen lateral fijo: 3 mm izquierda + 3 mm derecha
+   - Margen físico: 2 mm superior, 2.5 mm por lado y 3 mm inferior
    - El texto se ajusta usando las dimensiones FÍSICAS reales antes de imprimir
    - Este archivo se carga después de app.js y reemplaza solo el flujo de impresión de texto */
 (function () {
   const MM_TO_PX = 96 / 25.4;
-  const PT_TO_PX = 96 / 72;
 
   window.printStyle = function (w, h) {
+    if (typeof window.updatePrinterProfile === 'function') {
+      window.updatePrinterProfile(w, h);
+    }
+
     let s = document.getElementById('dynamic-print-style');
     if (!s) {
       s = document.createElement('style');
@@ -60,7 +63,10 @@
           width: 100% !important;
           height: 100% !important;
           box-sizing: border-box !important;
-          padding: 0.6mm 3mm !important;
+          padding-top: 2mm !important;
+          padding-left: 2.5mm !important;
+          padding-right: 2.5mm !important;
+          padding-bottom: 3mm !important;
           margin: 0 !important;
           flex-direction: column !important;
           justify-content: space-evenly !important;
@@ -74,14 +80,25 @@
           display: block !important;
           width: auto !important;
           height: auto !important;
-          max-width: calc(${w}in - 6mm) !important;
-          max-height: calc((${h}in - 1.2mm) / 2) !important;
+          max-width: calc(${w}in - 5mm) !important;
           margin: 0 auto !important;
           padding: 0 !important;
           flex: 0 1 auto !important;
           object-fit: contain !important;
           overflow: visible !important;
           background: #fff !important;
+        }
+
+        body.print-mode-barcode #print-barcode-content svg[hidden] {
+          display: none !important;
+        }
+
+        body.print-mode-barcode #print-barcode-content[data-barcode-count="2"] svg:not([hidden]) {
+          max-height: calc((${h}in - 5mm) / 2) !important;
+        }
+
+        body.print-mode-barcode #print-barcode-content[data-barcode-count="3"] svg:not([hidden]) {
+          max-height: calc((${h}in - 5mm) / 3) !important;
         }
 
         body.print-mode-text #print-barcode-content {
@@ -94,7 +111,10 @@
           height: 100% !important;
           box-sizing: border-box !important;
           margin: 0 !important;
-          padding: 1.5mm 3mm !important;
+          padding-top: 2mm !important;
+          padding-left: 2.5mm !important;
+          padding-right: 2.5mm !important;
+          padding-bottom: 3mm !important;
           align-items: center !important;
           justify-content: center !important;
           overflow: hidden !important;
@@ -122,9 +142,9 @@
   };
 
   function medirYCalcularFuente(texto, cfg) {
-    // Área útil física: se descuentan 3 mm por lado y 1.5 mm arriba/abajo.
-    const anchoUtilMM = Math.max(1, cfg.w * 25.4 - 6);
-    const altoUtilMM = Math.max(1, cfg.h * 25.4 - 3);
+    // Área útil física: 2.5 mm por lado, 2 mm arriba y 3 mm abajo.
+    const anchoUtilMM = Math.max(1, cfg.w * 25.4 - 5);
+    const altoUtilMM = Math.max(1, cfg.h * 25.4 - 5);
     const anchoPx = anchoUtilMM * MM_TO_PX;
     const altoPx = altoUtilMM * MM_TO_PX;
 
@@ -153,13 +173,10 @@
 
     const cabe = pt => {
       tester.style.fontSize = `${pt}pt`;
-      // scrollWidth/Height reflejan el contenido aunque overflow esté oculto.
       return tester.scrollWidth <= tester.clientWidth + 0.5 &&
              tester.scrollHeight <= tester.clientHeight + 0.5;
     };
 
-    // En automático se comienza deliberadamente alto y se busca el máximo real que cabe.
-    // Si el usuario selecciona un máximo manual, nunca se supera ese valor.
     const maxPt = cfg.max === 'auto'
       ? Math.min(96, Math.max(24, cfg.h * 72))
       : Number(cfg.max);
@@ -169,7 +186,6 @@
     let high = Math.max(minPt, maxPt);
     let best = minPt;
 
-    // Búsqueda binaria para obtener el mayor tamaño que cabe físicamente.
     for (let i = 0; i < 24; i++) {
       const mid = (low + high) / 2;
       if (cabe(mid)) {
@@ -181,8 +197,6 @@
     }
 
     tester.remove();
-
-    // Pequeño margen de seguridad para diferencias de rasterizado del driver Zebra/Chrome.
     return Math.max(minPt, best * 0.94);
   }
 
@@ -229,26 +243,24 @@
     if (!box || !size) return;
     const [w] = size.value.split('x').map(Number);
     const anchoMM = w * 25.4;
-    // Representa visualmente 3 mm respecto al ancho REAL de la etiqueta.
-    const pct = (3 / anchoMM) * 100;
+    const pct = (2.5 / anchoMM) * 100;
     box.style.paddingLeft = `${pct}%`;
     box.style.paddingRight = `${pct}%`;
+    box.style.paddingTop = '2mm';
+    box.style.paddingBottom = '3mm';
   }
 
   const btn = document.getElementById('btn-print-text');
   if (btn) {
-    // Sustituye el onclick original de app.js. No se modifica window.print().
     btn.onclick = function () {
       if (!prepararTextoFisico()) return;
       if (typeof window.saveTextHistory === 'function') {
         window.saveTextHistory(true);
       }
-      // Da un frame al navegador para aplicar el tamaño final antes del print preview.
       requestAnimationFrame(() => requestAnimationFrame(() => window.print()));
     };
   }
 
-  // Ajusta también la representación visual del margen de 3 mm en la preview.
   ['text-select-size', 'text-label-align', 'text-label-weight', 'text-label-max-size', 'text-label-input']
     .forEach(id => {
       const el = document.getElementById(id);

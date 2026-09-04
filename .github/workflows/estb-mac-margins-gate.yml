@@ -1,0 +1,180 @@
+name: eSTB MAC and print margins gate
+
+on:
+  push:
+    branches:
+      - repair/estb-mac-margins-20260904
+      - main
+    paths:
+      - index.html
+      - favicon.ico
+      - app.js
+      - print-fix.js
+      - tests/estb-mac-margins.browser.cjs
+      - .github/workflows/estb-mac-margins-gate.yml
+  pull_request:
+    branches: [main]
+    paths:
+      - index.html
+      - favicon.ico
+      - app.js
+      - print-fix.js
+      - tests/estb-mac-margins.browser.cjs
+      - .github/workflows/estb-mac-margins-gate.yml
+
+permissions:
+  contents: read
+
+jobs:
+  estb-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: JavaScript syntax and referenced assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r -d '' file; do node --check "$file"; done < <(find . -maxdepth 1 -name '*.js' -print0)
+          node --check tests/estb-mac-margins.browser.cjs
+          for ref in $(grep -Eo '(src|href)="[^"?#]+\.(js|css)' index.html | sed -E 's/^(src|href)="//' | grep -vE '^https?://'); do
+            test -f "$ref" || { echo "Missing referenced asset: $ref"; exit 1; }
+          done
+          if grep -R -n 'document\.write' --include='*.js' .; then
+            echo 'document.write is not allowed'
+            exit 1
+          fi
+          echo 'ESTB_SYNTAX_REFERENCES_OK'
+
+      - name: eSTB MAC static contract and cache version
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F 'data-estb-mac-version="20260904-estbmac1"' index.html
+          grep -F '<meta name="estb-mac-version" content="20260904-estbmac1">' index.html
+          grep -F 'id="text-aux-id" maxlength="12"' index.html
+          grep -F 'placeholder="Ej: D01234567890"' index.html
+          grep -F 'id="display-aux-id"' index.html
+          grep -F 'id="print-aux-id"' index.html
+          grep -F 'app.js?v=20260904-estbmac1' index.html
+          grep -F 'print-fix.js?v=20260904-estbmac1' index.html
+          ! grep -F 'app.js?v=20260830-stable1' index.html
+          ! grep -F 'print-fix.js?v=20260828-3' index.html
+          grep -F "function validAux(v){return /^[A-LN-Z0-9][A-Z0-9]{11}$/.test(v)}" app.js
+          grep -F "(!aux||validAux(aux))" app.js
+          grep -F "NO iniciar con M." app.js
+          grep -F "ERROR: El eSTB MAC NO puede empezar por la letra M." app.js
+          grep -F "'eSTB MAC':x.auxId||''" app.js
+          grep -F 'eSTB MAC: ${x.auxId||' app.js
+          grep -F "version:'3.1-estb-mac'" app.js
+          grep -F 'DPI_ULTRA_PRECISION=1200' app.js
+          grep -F 'ultimoRender.auxId?' app.js
+          grep -F 'slot=availH/imgs.length' app.js
+          echo 'ESTB_STATIC_CONTRACT_OK optional=yes exports=yes png=2or3 cache=new'
+
+      - name: Print margin contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F '.text-label-preview{padding:2mm 2.5mm 3mm 2.5mm}' index.html
+          grep -F 'padding-left:2.5mm!important' index.html
+          grep -F 'padding-right:2.5mm!important' index.html
+          grep -F 'padding-top:2mm!important' index.html
+          grep -F 'padding-bottom:3mm!important' index.html
+          grep -F 'MARGEN LATERAL: 2.5 mm | MARGEN INF: 3 mm' index.html
+          grep -F '2.5 mm a los lados y 3 mm inferior' index.html
+          grep -F '2.5mm (INF. 3mm)' index.html
+          grep -F 'padding-left: 2.5mm !important' print-fix.js
+          grep -F 'padding-right: 2.5mm !important' print-fix.js
+          grep -F 'padding-top: 2mm !important' print-fix.js
+          grep -F 'padding-bottom: 3mm !important' print-fix.js
+          grep -F 'const pct = (2.5 / anchoMM) * 100' print-fix.js
+          if grep -nE 'padding[^;]*(^|[[:space:]])3mm[[:space:]]+3mm|Margen lateral fijo: 3 mm|MARGEN LATERAL: 3 mm' index.html app.js print-fix.js; then
+            echo 'Legacy lateral 3 mm contract remains active'
+            exit 1
+          fi
+          echo 'ESTB_PRINT_MARGIN_OK top=2mm sides=2.5mm bottom=3mm'
+
+      - name: Pure validation and duplicate logic
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const assert=require('assert');
+          const validSN=v=>/^M[A-Z0-9]{11}$/.test(v);
+          const validAux=v=>/^[A-LN-Z0-9][A-Z0-9]{11}$/.test(v);
+          const digitsUA=v=>String(v||'').replace(/\D/g,'').slice(0,16);
+          const canSave=(sn,aux,ua)=>validSN(sn)&&(!aux||validAux(aux))&&digitsUA(ua).length===16;
+          assert.strictEqual(canSave('M12345678901','','0000000000000001'),true);
+          assert.strictEqual(canSave('M12345678901','D01234567890','0000000000000001'),true);
+          assert.strictEqual(canSave('M12345678901','M01234567890','0000000000000001'),false);
+          assert.strictEqual(validAux('D01234567890'),true);
+          assert.strictEqual(validAux('001234567890'),true);
+          assert.strictEqual(validAux('M01234567890'),false);
+          const rows=[{sn:'M12345678901',auxId:'D01234567890',ua:'000-00000-00000-001'}];
+          const duplicate=(sn,aux,ua)=>rows.some(x=>x.sn===sn||(aux&&x.auxId===aux)||digitsUA(x.ua)===digitsUA(ua));
+          assert.strictEqual(duplicate('M12345678902','D01234567890','0000000000000002'),true);
+          assert.strictEqual(duplicate('M12345678902','','0000000000000002'),false);
+          console.log('ESTB_LOGIC_GATE_OK optional=yes regex=yes duplicate_aux=yes');
+          NODE
+
+      - name: Install browser dependency
+        run: npm install --no-save --no-package-lock puppeteer-core@24.16.0
+
+      - name: Start local application
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m http.server 4177 --bind 127.0.0.1 >/tmp/estb-http.log 2>&1 &
+          for i in {1..30}; do
+            curl -fsS http://127.0.0.1:4177/ >/dev/null && exit 0
+            sleep 1
+          done
+          cat /tmp/estb-http.log
+          exit 1
+
+      - name: Desktop tablet mobile stale-cache restored-session offline CORS smoke
+        shell: bash
+        env:
+          CHROME_BIN: /usr/bin/google-chrome
+        run: node tests/estb-mac-margins.browser.cjs
+
+  verify-public-estb-mac:
+    if: github.ref == 'refs/heads/main'
+    needs: estb-contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Wait for public eSTB MAC version after Pages
+        shell: bash
+        env:
+          PUBLIC_URL: https://josantoboy-debug.github.io/generador-pdt/
+        run: |
+          set -euo pipefail
+          ok=0
+          for attempt in {1..60}; do
+            nonce="${GITHUB_SHA}-${attempt}-$(date +%s)"
+            code=$(curl -sS -L --max-time 20 -H 'Cache-Control: no-cache' -H 'Pragma: no-cache' -o /tmp/live.html -w '%{http_code}' "${PUBLIC_URL}?estbverify=${nonce}" || true)
+            if [ "$code" = 200 ] \
+              && grep -F 'data-estb-mac-version="20260904-estbmac1"' /tmp/live.html >/dev/null \
+              && grep -F 'id="text-aux-id" maxlength="12"' /tmp/live.html >/dev/null \
+              && grep -F 'id="display-aux-id"' /tmp/live.html >/dev/null \
+              && grep -F 'id="print-aux-id"' /tmp/live.html >/dev/null \
+              && grep -F 'app.js?v=20260904-estbmac1' /tmp/live.html >/dev/null \
+              && grep -F 'print-fix.js?v=20260904-estbmac1' /tmp/live.html >/dev/null \
+              && grep -F 'MARGEN LATERAL: 2.5 mm | MARGEN INF: 3 mm' /tmp/live.html >/dev/null; then
+              app_code=$(curl -sS -L --max-time 20 -H 'Cache-Control: no-cache' -o /tmp/live-app.js -w '%{http_code}' "${PUBLIC_URL}app.js?v=20260904-estbmac1&verify=${nonce}" || true)
+              print_code=$(curl -sS -L --max-time 20 -H 'Cache-Control: no-cache' -o /tmp/live-print.js -w '%{http_code}' "${PUBLIC_URL}print-fix.js?v=20260904-estbmac1&verify=${nonce}" || true)
+              if [ "$app_code" = 200 ] && [ "$print_code" = 200 ] \
+                && grep -F 'DPI_ULTRA_PRECISION=1200' /tmp/live-app.js >/dev/null \
+                && grep -F 'function validAux(v){return /^[A-LN-Z0-9][A-Z0-9]{11}$/.test(v)}' /tmp/live-app.js >/dev/null \
+                && grep -F 'padding-left: 2.5mm !important' /tmp/live-print.js >/dev/null; then
+                ok=1
+                echo "ESTB_PUBLIC_OK http=200 marker=20260904-estbmac1 attempt=${attempt}"
+                break
+              fi
+            fi
+            sleep 10
+          done
+          test "$ok" = 1
