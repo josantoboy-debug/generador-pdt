@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="es" data-nav-version="20260831-appnav1" data-tts-policy-version="20260831-critical1">
+<html lang="es" data-nav-version="20260831-appnav1" data-tts-policy-version="20260831-critical1" data-estb-mac-version="20260904-estbmac1">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="app-navigation-version" content="20260831-appnav1">
   <meta name="tts-policy-version" content="20260831-critical1">
+  <meta name="estb-mac-version" content="20260904-estbmac1">
   <title>GENERADOR CODIGO DE BARRAS - Fuentes Estandarizadas PDT</title>
   <!-- JsBarcode y SheetJS (XLSX) CDN -->
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
@@ -45,6 +46,19 @@
     @media(max-width:420px){.app-suite-title small{display:none}.app-suite-link{padding:8px 7px;font-size:10px}}
     @media print{.app-suite-bar{display:none!important}}
   </style>
+  <style id="estb-mac-margin-styles">
+    .text-label-preview{padding:2mm 2.5mm 3mm 2.5mm}
+    @media print{
+      body.print-mode-barcode #print-barcode-content,
+      body.print-mode-text #print-text-label{
+        padding-top:2mm!important;
+        padding-left:2.5mm!important;
+        padding-right:2.5mm!important;
+        padding-bottom:3mm!important;
+        box-sizing:border-box!important
+      }
+    }
+  </style>
 </head>
 <body>
 
@@ -67,164 +81,172 @@
 
     <section id="view-barcode" class="main-view active">
       <div class="layout-wrapper">
-    <div class="card generator-panel">
-      <h2>GENERADOR CODIGO DE BARRAS</h2>
-      <div class="printer-profile"><strong>PERFIL DE IMPRESIÓN:</strong> ULTRA PRECISIÓN · 2.5&quot; × 1.0&quot; · 63.5 × 25.4 mm · CODE128</div>
-      
-      <div class="config-row">
-        <div class="input-group">
-          <label>Tamaño de Etiqueta:</label>
-          <select id="select-size">
-            <option value="2.5x1.0" selected>2.5&quot; x 1.0&quot; (Zebra / DRS)</option>
-            <option value="2.5x2.0">2.5&quot; x 2.0&quot; (Estándar)</option>
-            <option value="4.0x6.0">4.0&quot; x 6.0&quot; (Grande)</option>
-          </select>
+        <div class="card generator-panel">
+          <h2>GENERADOR CODIGO DE BARRAS</h2>
+          <div class="printer-profile" id="printer-profile-tag"><strong>PERFIL DE IMPRESIÓN:</strong> ULTRA PRECISIÓN · 2.50" × 1.00" · MÁRGENES 2.5mm (INF. 3mm) · 1200 DPI · CODE128</div>
+
+          <div class="config-row">
+            <div class="input-group">
+              <label for="select-size">Tamaño de Etiqueta:</label>
+              <select id="select-size">
+                <option value="2.5x1.0" selected>2.5" x 1.0" (Zebra / DRS)</option>
+                <option value="2.5x2.0">2.5" x 2.0" (Estándar)</option>
+                <option value="4.0x6.0">4.0" x 6.0" (Grande)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label for="text-sn">Host SN (12 caracteres, debe iniciar con M):</label>
+            <input type="text" id="text-sn" maxlength="12" value="" placeholder="M + 11 caracteres" autocomplete="off" spellcheck="false" autofocus>
+            <div class="field-help">El Host SN debe comenzar obligatoriamente con la letra M.</div>
+            <div id="sn-error" class="field-error"></div>
+          </div>
+
+          <div class="input-group">
+            <label for="text-aux-id">eSTB MAC (Únicamente 12 caracteres, NO debe empezar con M):</label>
+            <input type="text" id="text-aux-id" maxlength="12" placeholder="Ej: D01234567890" autocomplete="off" spellcheck="false">
+            <div class="field-help">Debe tener exactamente 12 caracteres. Se prohíbe iniciar con M.</div>
+            <div id="aux-id-error" class="field-error"></div>
+          </div>
+
+          <div class="input-group">
+            <label for="text-ua">UA / UNIT ADDRESS:</label>
+            <input type="text" id="text-ua" maxlength="19" value="" placeholder="000-00000-00000-000" inputmode="numeric" autocomplete="off">
+            <div class="field-help">Se muestra con guiones para lectura. El CODE128 codifica únicamente los 16 dígitos.</div>
+          </div>
+
+          <div class="barcode-display">
+            <svg id="display-sn"></svg>
+            <svg id="display-aux-id" hidden></svg>
+            <svg id="display-ua"></svg>
+          </div>
+
+          <canvas id="export-canvas"></canvas>
+
+          <div class="btn-action-group">
+            <button id="btn-download" disabled>EXPORTAR CODIGO DE BARRA</button>
+            <button id="btn-print-main" disabled>IMPRIMIR CODIGO DE BARRA</button>
+          </div>
+        </div>
+
+        <div class="card history-panel">
+          <div class="tabs-header" id="tabs-header"></div>
+
+          <div class="history-select-toolbar">
+            <input type="checkbox" id="toggle-record-checkboxes" aria-label="Habilitar selección múltiple">
+            <label for="toggle-record-checkboxes">HABILITAR SELECCIÓN</label>
+            <span id="multi-select-count"></span>
+          </div>
+
+          <ul class="history-list" id="history-list">
+            <li class="empty-msg" style="padding:15px;text-align:center;">No hay registros</li>
+          </ul>
+
+          <div class="history-controls">
+            <div class="history-controls-row">
+              <button id="btn-replace-selected" class="btn-warning" disabled>REEMPLAZAR REGISTRO</button>
+              <button id="btn-delete-selected" class="btn-danger" disabled>ELIMINAR ITEM</button>
+            </div>
+            <div class="history-controls-row">
+              <button id="btn-export-unified" class="btn-info" disabled>EXPORTAR PESTAÑA ACTUAL</button>
+            </div>
+
+            <div class="history-controls-row">
+              <button id="btn-save-json" class="btn-save-as" disabled>GUARDAR SESIÓN COMPLETA</button>
+              <button id="btn-load-json" class="btn-secondary">CARGAR SESIÓN JSON</button>
+            </div>
+            <input type="file" id="file-input-json" accept=".json" style="display: none;">
+
+            <button id="btn-clear-all" class="btn-secondary" disabled>VACIAR PESTAÑA ACTUAL</button>
+          </div>
         </div>
       </div>
-
-      <div class="input-group">
-        <label>Host SN (12 caracteres, debe iniciar con M):</label>
-        <input type="text" id="text-sn" maxlength="12" value="" placeholder="M + 11 caracteres" autocomplete="off" spellcheck="false" autofocus>
-        <div class="field-help">El Host SN debe comenzar obligatoriamente con la letra M.</div>
-        <div id="sn-error" class="field-error"></div>
-      </div>
-
-      <div class="input-group">
-        <label>UA / UNIT ADDRESS:</label>
-        <input type="text" id="text-ua" maxlength="19" value="" placeholder="000-00000-00000-000" inputmode="numeric" autocomplete="off">
-        <div class="field-help">Se muestra con guiones para lectura. El CODE128 codifica únicamente los 16 dígitos.</div>
-      </div>
-
-      <div class="barcode-display">
-        <svg id="display-sn"></svg>
-        <svg id="display-ua"></svg>
-      </div>
-      
-      <canvas id="export-canvas"></canvas>
-
-      <div class="btn-action-group">
-        <button id="btn-download" disabled>EXPORTAR CODIGO DE BARRA</button>
-        <button id="btn-print-main" disabled>IMPRIMIR CODIGO DE BARRA</button>
-      </div>
-    </div>
-
-    <div class="card history-panel">
-      <div class="tabs-header" id="tabs-header"></div>
-
-      <div class="history-select-toolbar">
-        <input type="checkbox" id="toggle-record-checkboxes" aria-label="Habilitar selección múltiple">
-        <label for="toggle-record-checkboxes">HABILITAR SELECCIÓN</label>
-        <span id="multi-select-count"></span>
-      </div>
-
-      <ul class="history-list" id="history-list">
-        <li class="empty-msg" style="padding:15px;text-align:center;">No hay registros</li>
-      </ul>
-      
-      <div class="history-controls">
-        <div class="history-controls-row">
-          <button id="btn-replace-selected" class="btn-warning" disabled>REEMPLAZAR REGISTRO</button>
-          <button id="btn-delete-selected" class="btn-danger" disabled>ELIMINAR ITEM</button>
-        </div>
-        <div class="history-controls-row">
-          <button id="btn-export-unified" class="btn-info" disabled>EXPORTAR PESTAÑA ACTUAL</button>
-        </div>
-        
-        <div class="history-controls-row">
-          <button id="btn-save-json" class="btn-save-as" disabled>GUARDAR SESIÓN COMPLETA</button>
-          <button id="btn-load-json" class="btn-secondary">CARGAR SESIÓN JSON</button>
-        </div>
-        <input type="file" id="file-input-json" accept=".json" style="display: none;">
-
-        <button id="btn-clear-all" class="btn-secondary" disabled>VACIAR PESTAÑA ACTUAL</button>
-      </div>
-    </div>
-  </div>
     </section>
 
     <section id="view-text" class="main-view">
       <div class="card text-tab-card">
         <h2 class="text-tab-title">IMPRIMIR TEXTO</h2>
         <p class="text-tab-subtitle">Impresión independiente de texto ajustada al tamaño físico de la etiqueta.</p>
-      <div class="text-print-section">
-        <h3>IMPRIMIR TEXTO EN ETIQUETA</h3>
-        <p class="text-print-note">Escriba cualquier texto. Se ajustará al tamaño de etiqueta seleccionado manteniendo un margen fijo de <strong>3 mm a la izquierda y 3 mm a la derecha</strong>.</p>
+        <div class="text-print-section">
+          <h3>IMPRIMIR TEXTO EN ETIQUETA</h3>
+          <p class="text-print-note">Escriba cualquier texto. Se ajustará al tamaño de etiqueta seleccionado manteniendo un margen fijo de <strong>2.5 mm a los lados y 3 mm inferior</strong>.</p>
 
-        <div class="input-group">
-          <label>Tamaño de Etiqueta:</label>
-          <select id="text-select-size">
-            <option value="2.5x1.0" selected>2.5&quot; x 1.0&quot; (Zebra / DRS)</option>
-            <option value="2.5x2.0">2.5&quot; x 2.0&quot; (Estándar)</option>
-            <option value="4.0x6.0">4.0&quot; x 6.0&quot; (Grande)</option>
-          </select>
-        </div>
+          <div class="input-group">
+            <label for="text-select-size">Tamaño de Etiqueta:</label>
+            <select id="text-select-size">
+              <option value="2.5x1.0" selected>2.5" x 1.0" (Zebra / DRS)</option>
+              <option value="2.5x2.0">2.5" x 2.0" (Estándar)</option>
+              <option value="4.0x6.0">4.0" x 6.0" (Grande)</option>
+            </select>
+          </div>
 
-        <div class="input-group">
-          <label>Texto a imprimir:</label>
-          <textarea id="text-label-input" maxlength="500" placeholder="Ejemplo:
+          <div class="input-group">
+            <label for="text-label-input">Texto a imprimir:</label>
+            <textarea id="text-label-input" maxlength="500" placeholder="Ejemplo:
 FUENTE ESTANDARIZADA PDT
 EQUIPO VERIFICADO"></textarea>
-        </div>
-
-        <div class="config-row">
-          <div class="input-group">
-            <label>Alineación:</label>
-            <select id="text-label-align">
-              <option value="left">Izquierda</option>
-              <option value="center" selected>Centrada</option>
-              <option value="right">Derecha</option>
-            </select>
           </div>
-          <div class="input-group">
-            <label>Estilo:</label>
-            <select id="text-label-weight">
-              <option value="400">Normal</option>
-              <option value="700" selected>Negrita</option>
-            </select>
-          </div>
-          <div class="input-group">
-            <label>Tamaño máximo:</label>
-            <select id="text-label-max-size">
-              <option value="auto" selected>Automático</option>
-              <option value="28">28 pt</option>
-              <option value="24">24 pt</option>
-              <option value="20">20 pt</option>
-              <option value="18">18 pt</option>
-              <option value="16">16 pt</option>
-              <option value="14">14 pt</option>
-              <option value="12">12 pt</option>
-              <option value="10">10 pt</option>
-              <option value="8">8 pt</option>
-            </select>
-          </div>
-        </div>
 
-        <div class="text-label-preview-shell">
-          <div id="text-label-preview" class="text-label-preview">
-            <div id="text-preview-content">VISTA PREVIA DEL TEXTO</div>
-          </div>
-          <span class="margin-badge">MARGEN LATERAL: 3 mm + 3 mm</span>
-        </div>
-
-        <button id="btn-print-text" disabled>IMPRIMIR SOLO TEXTO</button>
-
-        <div class="text-history-section">
-          <div class="text-history-header">
-            <div>
-              <h3 style="display:inline;">HISTORIAL DE TEXTOS</h3>
-              <span id="text-history-count" class="text-history-count">0</span>
+          <div class="config-row">
+            <div class="input-group">
+              <label for="text-label-align">Alineación:</label>
+              <select id="text-label-align">
+                <option value="left">Izquierda</option>
+                <option value="center" selected>Centrada</option>
+                <option value="right">Derecha</option>
+              </select>
             </div>
-            <button type="button" id="btn-clear-text-history" disabled>VACIAR HISTORIAL</button>
+            <div class="input-group">
+              <label for="text-label-weight">Estilo:</label>
+              <select id="text-label-weight">
+                <option value="400">Normal</option>
+                <option value="700" selected>Negrita</option>
+              </select>
+            </div>
+            <div class="input-group">
+              <label for="text-label-max-size">Tamaño máximo:</label>
+              <select id="text-label-max-size">
+                <option value="auto" selected>Automático</option>
+                <option value="28">28 pt</option>
+                <option value="24">24 pt</option>
+                <option value="20">20 pt</option>
+                <option value="18">18 pt</option>
+                <option value="16">16 pt</option>
+                <option value="14">14 pt</option>
+                <option value="12">12 pt</option>
+                <option value="10">10 pt</option>
+                <option value="8">8 pt</option>
+              </select>
+            </div>
           </div>
-          <p class="text-print-note">Los textos se guardan automáticamente cuando los imprimes. También puedes guardarlos manualmente para reutilizarlos después.</p>
-          <div class="text-history-actions">
-            <button type="button" id="btn-save-text-history" disabled>GUARDAR TEXTO EN HISTORIAL</button>
+
+          <div class="text-label-preview-shell">
+            <div id="text-label-preview" class="text-label-preview">
+              <div id="text-preview-content">VISTA PREVIA DEL TEXTO</div>
+            </div>
+            <span class="margin-badge">MARGEN LATERAL: 2.5 mm | MARGEN INF: 3 mm</span>
           </div>
-          <div id="text-history-list" class="text-history-list">
-            <div class="text-history-empty">Todavía no hay textos guardados.</div>
+
+          <button id="btn-print-text" disabled>IMPRIMIR SOLO TEXTO</button>
+
+          <div class="text-history-section">
+            <div class="text-history-header">
+              <div>
+                <h3 style="display:inline;">HISTORIAL DE TEXTOS</h3>
+                <span id="text-history-count" class="text-history-count">0</span>
+              </div>
+              <button type="button" id="btn-clear-text-history" disabled>VACIAR HISTORIAL</button>
+            </div>
+            <p class="text-print-note">Los textos se guardan automáticamente cuando los imprimes. También puedes guardarlos manualmente para reutilizarlos después.</p>
+            <div class="text-history-actions">
+              <button type="button" id="btn-save-text-history" disabled>GUARDAR TEXTO EN HISTORIAL</button>
+            </div>
+            <div id="text-history-list" class="text-history-list">
+              <div class="text-history-empty">Todavía no hay textos guardados.</div>
+            </div>
           </div>
         </div>
-      </div>
       </div>
     </section>
 
@@ -243,7 +265,6 @@ EQUIPO VERIFICADO"></textarea>
     </div>
   </div>
 
-  <!-- VENTANA FLOTANTE (MODAL) DE EXPORTACIÓN -->
   <div id="export-modal" class="modal-overlay">
     <div class="modal-content">
       <h3>OPCIONES DE EXPORTACIÓN</h3>
@@ -256,10 +277,10 @@ EQUIPO VERIFICADO"></textarea>
     </div>
   </div>
 
-  <!-- ÁREA DE IMPRESIÓN DE ETIQUETAS Y CÓDIGOS DE BARRA -->
   <div id="print-area">
-    <div id="print-barcode-content">
+    <div id="print-barcode-content" data-barcode-count="2">
       <svg id="print-sn"></svg>
+      <svg id="print-aux-id" hidden></svg>
       <svg id="print-ua"></svg>
     </div>
     <div id="print-text-label">
@@ -267,23 +288,12 @@ EQUIPO VERIFICADO"></textarea>
     </div>
   </div>
 
-  <script src="app.js?v=20260830-stable1"></script>
-  <script src="print-fix.js?v=20260828-3"></script>
+  <script src="app.js?v=20260904-estbmac1"></script>
+  <script src="print-fix.js?v=20260904-estbmac1"></script>
   <script src="cloud-operator-session.js?v=20260830-stable1"></script>
   <script src="voice-welcome.js?v=20260831-critical1"></script>
   <script>
-    (()=>{
-      const btn=document.getElementById('creditsBtn');
-      const modal=document.getElementById('creditsModal');
-      const close=document.getElementById('creditsClose');
-      if(!btn||!modal||!close)return;
-      const openModal=()=>{modal.hidden=false;modal.classList.add('open');close.focus();};
-      const closeModal=()=>{modal.classList.remove('open');modal.hidden=true;btn.focus();};
-      btn.addEventListener('click',openModal);
-      close.addEventListener('click',closeModal);
-      modal.addEventListener('click',e=>{if(e.target===modal)closeModal();});
-      document.addEventListener('keydown',e=>{if(e.key==='Escape'&&modal.classList.contains('open'))closeModal();});
-    })();
+    (()=>{const btn=document.getElementById('creditsBtn'),modal=document.getElementById('creditsModal'),close=document.getElementById('creditsClose');if(!btn||!modal||!close)return;const openModal=()=>{modal.hidden=false;modal.classList.add('open');close.focus();};const closeModal=()=>{modal.classList.remove('open');modal.hidden=true;btn.focus();};btn.addEventListener('click',openModal);close.addEventListener('click',closeModal);modal.addEventListener('click',e=>{if(e.target===modal)closeModal();});document.addEventListener('keydown',e=>{if(e.key==='Escape'&&modal.classList.contains('open'))closeModal();});})();
   </script>
 </body>
 </html>
